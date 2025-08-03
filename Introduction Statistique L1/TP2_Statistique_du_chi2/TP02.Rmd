@@ -1,0 +1,243 @@
+---
+title: '**TP R Introduction à la statistique**'
+author: | 
+        **Mohamed FOFANA** |
+        *L1 MIASHS - Université Grenoble Alpes* 
+output:
+  pdf_document: 
+    latex_engine: xelatex
+    toc: true
+    number_sections: true
+  html_document: 
+    toc: true
+    number_sections: true
+---
+
+#  **Séance de TP 2: Statistique du Khi - carré $\chi^2$**
+
+##  Distributions bivariées
+On souhaite se familiariser avec le tableau de contingence d’une série double. On prend pour exemple la série des poids et tailles de bébés :
+
+![](C:/Users/DVE ICAMPUS/Desktop/MIASHS-UGA/STAT L1/TP2_Statistique_du_chi2/Distribution_bivarie.JPEG)
+
+
+###  Saisie du tableau de contingence
+
+Le tableau de contingence est une matrice sous R à laquelle nous allons rajouter quelques éléments cosmétiques.
+
+  (i) On saisit la matrice ayant pour coefficients les effectifs dans l’ordre du tableau ci dessus. On peut choisir entre deux façon de déclarer :
+      - concaténer des vecteurs verticaux (”c” pour colonne) :
+```{r}
+poidstaille=cbind(c(830,862),c(8615,11183),c(30784,27566),c(4839,2348))
+```
+     - concaténer des vecteurs verticaux (”r” pour raw (ligne)) :
+```{r}
+ poidstaille=rbind(c(830,8615,30784,4839),c(862,11183,27566,2348))
+```
+  (ii) On ajoute la colonne modalité de X :  
+```{r}
+rownames(poidstaille)=c("Gar¸cons","filles")
+```
+  
+  (iii) On ajoute la ligne modalité de Y :
+```{r}
+ colnames(poidstaille)=c("Faible","Moyen","Elevé","Tr.élv")
+```
+  (iv) Afficher poidstaille.
+```{r}
+ head(poidstaille)
+``` 
+  
+###  Tableau des fréquences
+
+  (i) On peut obtenir l’effectif total de la population par la fonction `sum()` :
+```{r}
+ sum(poidstaille)
+```
+     
+  (ii) On peut obtenir le tableau des fréquences. Il ne faut pas oublier que notre tableau est une matrice et que l’on peut effectuer toutes les opérations usuelles comme diviser la matrice poidstaille terme à terme par l’effectif total **sum(poidstaille)**
+```{r}
+ frequences=poidstaille/sum(poidstaille)
+```
+          **Remarque:** On aurait pu obtenir ce tableau par la commande `prop.table()` :
+```{r}
+prop.table(poidstaille)
+```
+### 1.3 Distributions conditionnelles 
+
+  (i) La distribution de Y pour les garçons est donnée par la première ligne de la matrice poidstaille soit 
+```{r}
+ poidstaille[1,] #on note qu’on fixe la première ligne par le 1, mais on fait d2rouler les colonnes).
+```
+ En calculant les fréquences par rapport à l’effectif de garçons 
+```{r}
+sum(poidstaille[1,])
+```
+   On obtient la distribution conditionnelle de Y étant donné X =garçon : 
+```{r}
+poidstaille[1,]/sum(poidstaille[1,])
+```
+  (ii) De même, on obtiendra la distribution conditionnelle de Y étant donné X =fille par
+```{r}
+ poidstaille[2,]/sum(poidstaille[2,])
+```
+  (iii) Tracer sur le même diagramme en bâtons ces deux distributions conditionelles. Que peut-on conclure intuitivement sur la d´ependance entre X et Y ?
+     
+**Réponse** : On note qu’utiliser des fréquences ou des effectifs ne change que l’échelle. On choisit donc de tracer les effectifs. On utilisera la commande
+```{r}
+barplot(poidstaille,beside=TRUE)
+# On observe un léger décallage du pois des bébés filles vers les faibles poids. Ce n’est pas flagrant.
+```
+###  Distributions marginales
+
+  (i) On peut obtenir les colonnes et lignes ”Total” (les marges) par la commande `addmargins`          
+```{r}
+ frequences=addmargins(frequences)
+```
+  (ii) La série de fréquences de Garçon et de filles dans la population est appelée distribution marginale de X :   
+```{r}
+frequences[,5] #  Il s’agit de la colonne sum que l’on extrait par la commande frequences[,5] (on note qu’on fixe la dernière colonne par le 5, mais on fait dérouler les lignes).
+
+```
+  (iii) De même, on obtient la distribution marginale de Y à partir de la ligne sum en extrayant de frequences la derni`ere ligne (on fixe la troisième ligne et on déroule les colonnes) grâce à: 
+```{r}
+frequences[3,]
+```
+### *$\nu$* de Cramér 
+
+ On se propose d’utiliser un indicateur d’association appelé $\nu$ de Cramér pour vérifier l’observation de la dépendance entre les variables observée dans la section 4.3. Plus $\nu$ est proche de zéro, plus il y a ind´ependance entre les deux variables X et Y étudiées. Il vaut 1 en cas de complète dépendance. Le coefficient V de Cramér nécessite l’utilisation de la statistique du $\chi^2$. La statistique du $\chi^2$ est disponible via le test du même nom :
+```{r}
+chisq.test(poidstaille)
+```
+![](C:\Users\DVE ICAMPUS\Desktop\MIASHS-UGA\STAT L1\TP2_Statistique_du_chi2/Vcramer.JPEG)
+
+
+ ***On se propose de définir une fonction Cramer : (taper sans fautes !)***
+ 
+  La fonction s’appelle Cramer, la variable à qui elle s’applique sera nommée table durant la programmation de la fonction, Le test du $\chi^2$ est stocké dans la variable test, Nous ne prenons que la variable statistic dans test, on l’affecte à $\chi^2$, L’effectif total stocké dans n,  Le nombre de colonnes est la longueur d’une ligne de table, Le nombre de lignes est la longueur d’une colonne de table, Ne pas oublier de faire afficher $\nu$, Fin de la déclaration de la fonction
+      
+      NB: Taper help(chisq.test) pour obtenir le mode d’emploi en ligne de chisq.test.
+ 
+```{r}
+ cramer=function(table){
+   test=chisq.test(table)
+   chi2=as.numeric(test$statistic)
+    n=sum(table)
+     c=length(table[1,])
+ r=length(table[,1])
+  m=min(c,r)
+ V=sqrt(chi2/(n*(m-1)))
+ V
+ }
+```
+  
+   Il reste à appliquer notre fonction Cramer à notre tableau de contingence poidstaille pour
+ lire le $\nu$ de Cramér :  
+```{r}
+ cramer(poidstaille)
+```
+  On donne le tableau suivant pour l’interpr´etation de la valeur du V de Cramér :
+  
+## test du $\chi^2$
+
+### Acquisition de fichier .csv
+
+ Il faut bien reconnaître que pour de grandes séries statistiques, on préfèrerait éviter d’avoir à retaper les valeurs. Pour cela, on a créé le fichier .csv (coma separated values) qui permet de communiquer des listes donn´ees séparées par des virgules entre diff´erents logiciels comme excel, python, R...
+    
+ Le fichier ”diplome sexe.csv” recense le sexe et le niveau de diplˆome obtenu d’un échantillon
+ aléeatoire de 1367 diplômés d’université. L’objectif de ce paragraphe est d’étudier la relation entre ces deux variables qualitatives. Nous allons pour cela effectuer un test d’indépendance
+ de Chi-deux. Puis pour quantifier cette relation, nous utiliserons le coefficient de Cramer. 
+Enregistrer le fichier **diplome_sexe.csv** et sélectionner le dossier dans lequel il est enregistré répertoire de travail dans R (Fichier => changer le répertoire courant).
+ En ouvrant le fichier **diplome_sexe.csv** dans un éditeur de texte on s’aperçoit que les données
+ sont organisées verticalement sous Sexe et Diplome qui servent d’étiquettes de liste (header=TRUE) et que les colonnes sont délimitées par des ”;”, (sep=";").
+  Ouvrons le fichier dans R et affectons le à la variable data.
+```{r}
+data=read.csv("C:/Users/DVE ICAMPUS/Desktop/MIASHS-UGA/STAT L1/Donnees/diplome_sexe.csv",header=TRUE,sep=";",fileEncoding = "latin1")
+
+```
+   Avec la fonction head(), vérifions que les données ont été correctement importées :
+```{r}
+head(data)
+
+```
+Utilisons la fonction table() pour éditer le tableau de contingence des variables diplˆome et
+ sexee et affichons le.
+```{r}
+contingences=table(data)
+ contingences
+```
+ Utilisons **la fonction chisq.test()** pour effectuer le test du Chi2 et conclure quant à la dépendance entre le sexe et le niveau d’étude obtenu.
+ 
+```{r}
+chisq.test(contingences)
+```
+On note que la p−value est supérieure à 0.05. On ne rejette donc pas l’hypothèse nulle qui est l’indépendance. On en conclut qu’il y a significativement indépendance des variables.
+ Utiliser la fonction `cramer()` pour calculer le V de Cramér et confirmer l’indépendance des deux variables.
+```{r}
+cramer(contingences)
+```
+ **Réponse** : Puisque le *V* est inférieur à 0,1, cela confirme l’indépendance des variables.  
+ 
+##  Normalité et Anova
+
+Enregistrer le fichier notesCC1.csv et sélectionner le dossier dans lequel il est enregistré comme répertoire de travail dans R (Fichier => changer le répertoire courant). Ce fichier regroupe vos notes de CC1 par ordre décroissant, pour ´eviter toute perte de confidentialité, et le numéros du sujet sur lequel portait la copie. On se propose d’étudier la normalité des notes et de faire une ANOVA pour savoir s’il y a une différence significative des notes en fonction du sujet donné (et ainsi se questionner sur l’égalité de vos chances).
+
+En ouvrant le fichier notesCC1.csv dans un éditeur de texte on s’aperçoit que les données
+ sont organisées verticalement :
+   
+    - sous note et sujet qui servent d’´etiquettes de liste (header=TRUE),
+    
+    - séparées par un ”;” (sep=";"),
+    
+    - avec pour séparateur décimal une virgule (dec=",").
+    
+Ouvrons le fichier dans R et affectons le à la variable data.
+```{r}
+data=read.csv("C:/Users/DVE ICAMPUS/Desktop/MIASHS-UGA/STAT L1/Donnees/notesCC1.csv",header=TRUE,sep=";",dec=",")
+```
+ Vérifions l’acquisition
+```{r}
+head(data)
+```
+  Affectons les variables sujet et note dans notre environnement R.
+```{r}
+sujet=data$sujet
+ note=data$note
+```
+   Il y a fort à parier que R prend la variable sujet pour une variable quantitative. Or, c’est une
+ variable qualitative (facteur) à deux valeurs. Forçons R a la considérer comme tel.
+```{r}
+sujet=data$sujet
+head(sujet)
+sujet=factor(sujet)
+head(sujet)
+
+
+```
+###  Normalité des notes
+
+Testons la normalité des notes avec le test de Shapiro–Wilk. Nous pouvons d’abord regarder
+ la distribution des notes
+```{r}
+plot(density(note))
+```
+
+ La cloche semble bosselée, ils n’y a sans doute pas normalité... Rappelons que l’hypothèse nulle du test de Shapiro–Wilk est “la série est normalement distribuée”. Effectuer le test
+```{r}
+shapiro.test(note)
+```
+  **Réponse :** La p−value est proche de zéro. On en d´eduit que l’on rejette significativement la normalité.
+  
+### Influence du sujet sur la note
+ Affichons les boîtes de distribution côte à côte avec ces nouvelles séries.
+```{r}
+boxplot(note~sujet)
+```
+  Honnêtement... peu de différences.
+ Tester l’hypothèse nulle “Le facteur(sujet) n’a pas d’effet sur les notes” par l’ANOVA.
+```{r}
+anova(lm(note~sujet))
+```
+ 
+    Réponse : La p−value 0.8262 est grande, on ne rejette pas significativement l’hypothèse nulle. 
+    On retient que le sujet n’influence pas les notes.
